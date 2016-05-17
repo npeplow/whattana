@@ -1,76 +1,41 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
-require "../vendor/autoload.php";
+require "vendor/autoload.php";
 use CrudKit\CrudKitApp;
-use CrudKit\Pages\SQLiteTablePage;
-use CrudKit\Pages\BasicLoginPage;
+use CrudKit\Pages\MySQLTablePage;
 
-// Create a new CrudKitApp object
-$app = new CrudKitApp ();
-$app->setStaticRoot ("static/crudkit/");
-$app->setAppName ("Admin Panel");
+// Create a new app
+$app = new CrudKitApp();
 
-// 
-// HANDLE LOGIN
-// 
-$login = new BasicLoginPage ();
-$login->setWelcomeMessage ("Use credentials admin/demo or user/demo");
-if ($login->userTriedLogin ()) {
-    $username = $login->getUserName ();
-    $password = $login->getPassword ();
+$url = getenv('JAWSDB_URL');
+$dbparts = parse_url($url);
 
-    // TODO: you should use your own authentication scheme here
-    if ($username === 'admin' && $password === 'demo') {
-        $login->success ();
-    }
-    else if ($username === 'user' && $password === 'demo') {
-        $login->success ();
-    }
-    else {
-        $login->fail ("Please check your password (admin/demo) or (user/demo)");
-    }
-}
-$app->useLogin ($login);
-// 
-// END HANDLING LOGIN.
-// 
+$hostname = $dbparts['host'];
+$username = $dbparts['user'];
+$password = $dbparts['pass'];
+$database = ltrim($dbparts['path'],'/');
 
-if ($login->getLoggedInUser () === "user") {
-    // If the user isn't `admin` then use read-only 
-    $app->setReadOnly (true);
-}
+// Create connection
 
-$page = new SQLiteTablePage ("sqlite2", "demo_database.sqlite");
-$page->setName("Customer Management")
-    ->setTableName("Customer")
-    ->setRowsPerPage (20)
-    ->setPrimaryColumn("CustomerId")
-    ->addColumn("FirstName", "First Name", array(
-        'required' => true
-    ))
-    ->addColumn("LastName", "Last Name")
-    ->addColumn("City", "City", array(
-        'required' => true
-    ))
-    ->addColumn("Country", "Country")
-    ->addColumn("Email", "E-mail")
-    ->setSummaryColumns(array("FirstName", "Country"));
-$app->addPage($page);
 
-$invoice = new SQLiteTablePage ("sqlite1", "demo_database.sqlite");
-$invoice->setName("Invoice")
-    ->setPrimaryColumnWithId("a0", "InvoiceId")
-    ->setTableName("Invoice")
-    ->addColumnWithId("a1", "BillingCity", "City")
-    ->addColumnWithId("a2", "BillingCountry", "Country")
-    ->addColumnWithId("a3", "Total", "Total")
-    ->addColumnWithId("a4", "InvoiceDate", "Date", array(
-    ))
-    ->setSummaryColumns(["a1", "a2", "a3", "a4"]);
-$app->addPage($invoice);
+// Create a new page mapped to a table
+$sqlPage = new MySQLTablePage ("shopify_page", $username, $password, $database, $hostname);
+$sqlPage->setTableName ("Customers")  // Set the table name
+        ->setPrimaryColumn ("CustomerId")
+        ->addColumn ("FirstName", "First Name")
+        ->addColumn ("LastName", "Last Name")
+        ->addColumn ("DateOfPurchase", "Date of Purchase")
+        ->addColumn ("Country", "Country", [ // Additional configuration using options
+            'validation' => [
+                'required' => false,
+            ]
+        ])
+        ->setSummaryColumns (["FirstName", "Country"]);
 
-// Render the app. This will display the HTML
-$app->render ();
+
+// Add the page to the app
+$app->addPage($sqlPage);
+
+// Render the app
+$app->render();
+?>
