@@ -19,7 +19,7 @@ $database = ltrim($dbparts['path'],'/');
 
 
 // Create a new page mapped to a table
-$sqlPage = new MySQLTablePage ("shopify_page", $username, $password, $database, $hostname);
+$sqlPage = new MySQLTablePage ("shopify_page", $username, $password, $database, $hostname, '3306');
 $sqlPage->setTableName ("Customers")  // Set the table name
         ->setPrimaryColumn ("CustomerId")
         ->addColumn ("FirstName", "First Name")
