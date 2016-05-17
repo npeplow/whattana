@@ -18,7 +18,7 @@ if ($conn->connect_error) {
 } 
 echo "Connected successfully";
 
-
+$conn->close();
 
 // Show all information, defaults to INFO_ALL
 phpinfo();
